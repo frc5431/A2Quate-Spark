@@ -12,7 +12,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.*; 
+import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.cameraserver.CameraServer;
+
+import com.ctre.phoenix.motorcontrol.can.*;
+
+import frc.robot.Titan.LogitechExtreme3D;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel;
@@ -33,9 +38,11 @@ public class Robot extends IterativeRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private Titan.Xbox driver; 
   private CANSparkMax frontLeft, backLeft, frontRight, backRight;
-  private SpeedControllerGroup left,right;   
+  private SpeedControllerGroup left, right, intake, arm, elevator;   
   private DifferentialDrive driveBase;
-
+  private WPI_TalonSRX leftIntake, rightIntake, leftArm, rightArm, leftElevator, rightElevator;
+  private LogitechExtreme3D operator;
+  
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
@@ -52,12 +59,32 @@ public class Robot extends IterativeRobot {
     frontRight = new CANSparkMax(2, MotorType.kBrushless); 
     backRight = new CANSparkMax(3, MotorType.kBrushless); 
 
+    leftIntake = new WPI_TalonSRX(10);
+		rightIntake = new WPI_TalonSRX(5);
+    rightIntake.setInverted(true);
+
+    leftArm = new WPI_TalonSRX(6);
+		rightArm = new WPI_TalonSRX(1);
+    rightArm.setInverted(true);
+
+    leftElevator = new WPI_TalonSRX(3);
+    rightElevator = new WPI_TalonSRX(8);
+
     // controller groups + driveBase
+    intake = new SpeedControllerGroup(leftIntake, rightIntake);
+    arm = new SpeedControllerGroup(leftArm, rightArm);
+    elevator = new SpeedControllerGroup(leftElevator, rightElevator);
     left = new SpeedControllerGroup(frontLeft, backLeft);
     right = new SpeedControllerGroup(frontRight, backRight); 
     driveBase = new DifferentialDrive(left,right); 
 
     driver = new Titan.Xbox(0); 
+    operator = new Titan.LogitechExtreme3D(1);
+    driver.setDeadzone(.15);
+    operator.setDeadzone(.15);
+
+    CameraServer.getInstance().startAutomaticCapture("FrontCamera", 1);
+    CameraServer.getInstance().startAutomaticCapture("BackCamera", 0);
   }
 
   /**
@@ -108,6 +135,29 @@ public class Robot extends IterativeRobot {
 		double leftX = driver.getRawAxis(Titan.Xbox.Axis.LEFT_X);
 		double drivespeed = 1.0;
     driveBase.tankDrive(leftY - leftX*drivespeed, leftY + leftX*drivespeed);
+
+    if (operator.getRawButton(Titan.LogitechExtreme3D.Button.TRIGGER)) {
+			intake.set(0.75);
+		} else if (operator.getRawButton(Titan.LogitechExtreme3D.Button.TEN) || operator.getRawButton(Titan.LogitechExtreme3D.Button.NINE)) {
+			intake.set(-1);
+		} else {
+			intake.set(0);	
+    }
+    
+     arm.set(operator.getRawAxis(Titan.LogitechExtreme3D.Axis.Y)/2);
+
+     double throttle = 1-((operator.getRawAxis(Titan.LogitechExtreme3D.Axis.SLIDER)+1)/2);
+
+     if (operator.getPOV() == 0) {
+			elevator.set(throttle);
+			// hat is being pushed forward, extend the elevator
+		} else if (operator.getPOV() == 180) {
+			elevator.set(-throttle);
+			// hat is being pushed backward, retract the elevator
+		} else {
+			elevator.set(0);
+			// hat is in it's default position, stop the elevator motors
+}
     
   }
 
