@@ -132,9 +132,10 @@ public class Robot extends IterativeRobot {
   @Override
   public void teleopPeriodic() {
     double leftY = driver.getRawAxis(Titan.Xbox.Axis.LEFT_Y);
-		double leftX = driver.getRawAxis(Titan.Xbox.Axis.LEFT_X);
-		double drivespeed = 1.0;
-    driveBase.tankDrive(leftY - leftX*drivespeed, leftY + leftX*drivespeed);
+		double RightY = driver.getRawAxis(Titan.Xbox.Axis.RIGHT_Y);
+		// double drivespeed = 1;
+    // driveBase.tankDrive(leftY - leftX*drivespeed, leftY + leftX*drivespeed);
+    driveBase.tankDrive(leftY, RightY);
 
     if (operator.getRawButton(Titan.LogitechExtreme3D.Button.TRIGGER)) {
 			intake.set(0.75);
@@ -143,9 +144,10 @@ public class Robot extends IterativeRobot {
 		} else {
 			intake.set(0);	
     }
+
     
      arm.set(operator.getRawAxis(Titan.LogitechExtreme3D.Axis.Y)/2);
-
+/*
      double throttle = 1-((operator.getRawAxis(Titan.LogitechExtreme3D.Axis.SLIDER)+1)/2);
 
      if (operator.getPOV() == 0) {
@@ -158,7 +160,7 @@ public class Robot extends IterativeRobot {
 			elevator.set(0);
 			// hat is in it's default position, stop the elevator motors
 }
-    
+    */
   }
 
   /**
